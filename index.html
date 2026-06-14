@@ -826,6 +826,16 @@ function openSheets() {
   window.open('https://docs.google.com/spreadsheets/d/1QP8WSBVkq1oEFakYSyZH5E-1KWXr5fX0b3CxdnMhZ-4/edit', '_blank');
 }
 
+function resetLog() {
+  if (confirm('Reset log hari ini?')) {
+    localStorage.removeItem('waa_absen_log');
+    localStorage.removeItem('waa_absen_date');
+    sessionLog = {};
+    renderLogList();
+    showNotif('Log direset.', 'sent');
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────
 renderLogList();
 loadTutorMap();
