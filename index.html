@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Absen Tutor WAA</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --accent: #4f8ef7;
+    --accent-dim: #1e2e50;
+    --green: #22c55e;
+    --green-dim: #14291e;
+    --amber: #f59e0b;
+    --amber-dim: #2a2010;
+    --red: #ef4444;
+    --red-dim: #2a1010;
+    --text: #e8eaf6;
+    --text-muted: #8892b0;
+    --text-dim: #4a5080;
+    --mono: 'Courier New', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header */
+  header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-dot {
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .logo-text {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* BAC selector */
+  .bac-bar {
+    padding: 10px 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .bac-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  select {
+    flex: 1;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-family: var(--sans);
+    appearance: none;
+    cursor: pointer;
+  }
+
+  select:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Main content */
+  main {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* Scanner area */
+  .scanner-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .scanner-header {
+    padding: 14px 16px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .scanner-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .scanner-status {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+
+  .scanner-status.active {
+    background: var(--green-dim);
+    color: var(--green);
+  }
+
+  .scanner-status.inactive {
+    background: var(--surface2);
+    color: var(--text-dim);
+  }
+
+  #reader {
+    width: 100%;
+    background: #000;
+  }
+
+  #reader video { width: 100% !important; transform: scaleX(-1); }
+
+  .scanner-controls {
+    padding: 12px 16px;
+    display: flex;
+    gap: 8px;
+  }
+
+  /* Buttons */
+  .btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.02em;
+  }
+
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  /* Result panel */
+  .result-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .result-panel.success { border-color: var(--green); }
+  .result-panel.warning { border-color: var(--amber); }
+  .result-panel.error { border-color: var(--red); }
+
+  .result-banner {
+    padding: 20px 20px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-icon {
+    font-size: 36px;
+    line-height: 1;
+  }
+
+  .result-status {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .result-status.in { color: var(--green); }
+  .result-status.out { color: var(--amber); }
+  .result-status.error { color: var(--red); }
+
+  .result-name {
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .result-time {
+    font-size: 28px;
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+
+  .result-meta {
+    padding: 12px 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .meta-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+
+  .meta-value {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+  }
+
+  .idle-state {
+    padding: 32px 20px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* Log table */
+  .log-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .log-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .log-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .log-count {
+    font-size: 11px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+
+  .log-list {
+    max-height: 260px;
+    overflow-y: auto;
+  }
+
+  .log-item {
+    padding: 10px 16px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+  }
+
+  .log-item:last-child { border-bottom: none; }
+
+  .log-item-name {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .log-item-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+  }
+
+  .log-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .badge-in {
+    background: var(--green-dim);
+    color: var(--green);
+  }
+
+  .badge-out {
+    background: var(--amber-dim);
+    color: var(--amber);
+  }
+
+  .log-empty {
+    padding: 24px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  /* Export button */
+  .footer-actions {
+    display: flex;
+    gap: 8px;
+    padding-bottom: 20px;
+  }
+
+  /* Overlay notification */
+  .notif {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    left: 16px;
+    max-width: 360px;
+    margin: 0 auto;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 100;
+    transform: translateY(-80px);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .notif.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .notif.sent { border-color: var(--green); }
+  .notif.fail { border-color: var(--red); }
+
+  .notif-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .notif.sent .notif-dot { background: var(--green); }
+  .notif.fail .notif-dot { background: var(--red); }
+
+  /* ── Clock bar ── */
+  .clock-bar {
+    padding: 8px 20px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .clock-now {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    font-family: var(--mono);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    <div>
+      <div class="logo-text">Absen Tutor WAA</div>
+      <div class="logo-sub">Work Abroad Academy</div>
+    </div>
+  </div>
+</header>
+
+<div class="bac-bar">
+  <span class="bac-label">Lokasi BAC</span>
+  <select id="bacSelect">
+    <option value="">Memuat lokasi...</option>
+  </select>
+</div>
+
+<div class="clock-bar">
+  <span class="clock-now" id="clockNow">--:--:--</span>
+</div>
+
+<main>
+
+  <!-- Scanner -->
+  <div class="scanner-card">
+    <div class="scanner-header">
+      <span class="scanner-title">Kamera Scanner</span>
+      <span class="scanner-status inactive" id="scannerStatus">Nonaktif</span>
+    </div>
+    <div id="reader"></div>
+    <div class="scanner-controls">
+      <button class="btn btn-primary" id="btnStart" onclick="startScanner()">Aktifkan Kamera</button>
+      <button class="btn btn-secondary" id="btnStop" onclick="stopScanner()" disabled>Stop</button>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-panel" id="resultPanel">
+    <div class="idle-state" id="idleState">
+      Arahkan kamera ke barcode tutor<br>untuk mencatat kehadiran.
+    </div>
+    <div id="resultContent" style="display:none">
+      <div class="result-banner">
+        <div class="result-icon" id="resultIcon">—</div>
+        <div class="result-status" id="resultStatus"></div>
+        <div class="result-name" id="resultName"></div>
+        <div class="result-time" id="resultTime"></div>
+      </div>
+      <div class="result-meta">
+        <div class="meta-item">
+          <span class="meta-label">Tutor ID</span>
+          <span class="meta-value" id="metaId">—</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">BAC</span>
+          <span class="meta-value" id="metaBac">—</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Tanggal</span>
+          <span class="meta-value" id="metaDate">—</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Durasi hadir</span>
+          <span class="meta-value" id="metaDuration">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log hari ini -->
+  <div class="log-card">
+    <div class="log-header">
+      <span class="log-title">Log Hari Ini</span>
+      <span class="log-count" id="logCount">0</span>
+    </div>
+    <div class="log-list" id="logList">
+      <div class="log-empty">Belum ada scan hari ini.</div>
+    </div>
+  </div>
+
+  <!-- Export -->
+  <div class="footer-actions">
+    <button class="btn btn-secondary" onclick="exportCSV()" style="font-size:12px">
+      ↓ Export CSV
+    </button>
+    <button class="btn btn-secondary" onclick="exportToSheets()" style="font-size:12px">
+      ↑ Kirim ke Sheets
+    </button>
+    <button class="btn btn-secondary" onclick="openSheets()" style="font-size:12px">
+      ↗ Buka Sheets
+    </button>
+  </div>
+
+</main>
+
+<!-- Notifikasi -->
+<div class="notif" id="notif">
+  <div class="notif-dot"></div>
+  <span id="notifMsg"></span>
+</div>
+
+<script>
+// ── CONFIG — ganti sesuai deployment ──────────────────────────────────────
+const SHEETS_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxii-MIoNGBDsaf1UzEdiuk_um76Ew8m1qsXPswDp20dmcbFrMOulP2s5Deu94GkeSw2Q/exec';
+// Contoh: 'https://script.google.com/macros/s/AKfycb.../exec'
+
+const TUTOR_MAP_URL = 'https://script.google.com/macros/s/AKfycbxii-MIoNGBDsaf1UzEdiuk_um76Ew8m1qsXPswDp20dmcbFrMOulP2s5Deu94GkeSw2Q/exec';
+// URL Apps Script tutormap_api.gs yang sudah di-deploy sebagai Web App
+// ─────────────────────────────────────────────────────────────────────────
+
+let scanner = null;
+let isScanning = false;
+let lastScanTime = 0;
+const COOLDOWN_MS = 3000;
+
+// sessionLog: { [qr_id]: { name, clockIn, clockOut, bac } }
+let sessionLog = JSON.parse(localStorage.getItem('waa_absen_log') || '{}');
+
+// tutorMap di-fetch dari Apps Script saat load
+// fallback ke cache localStorage kalau offline
+let TUTOR_MAP = JSON.parse(localStorage.getItem('waa_tutor_map') || '{}');
+
+async function loadTutorMap() {
+  if (!TUTOR_MAP_URL) return;
+  try {
+    const res  = await fetch(TUTOR_MAP_URL);
+    const data = await res.json();
+    if (data && typeof data === 'object' && !data.error) {
+      TUTOR_MAP = data;
+      localStorage.setItem('waa_tutor_map', JSON.stringify(data));
+      console.log(`TutorMap loaded: ${Object.keys(data).length} tutor`);
+    }
+  } catch (e) {
+    console.warn('TutorMap fetch gagal, pakai cache lokal:', e.message);
+  }
+}
+
+// ── Clock ─────────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clockNow').textContent = now.toLocaleTimeString('id-ID', { hour12: false });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Scanner ───────────────────────────────────────────────────────────────
+function startScanner() {
+  const bac = document.getElementById('bacSelect').value;
+  if (!bac) { showNotif('Pilih lokasi BAC dulu!', 'fail'); return; }
+
+  scanner = new Html5Qrcode('reader');
+  scanner.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 240, height: 240 } },
+    onScanSuccess,
+    () => {}
+  ).then(() => {
+    isScanning = true;
+    document.getElementById('btnStart').disabled = true;
+    document.getElementById('btnStop').disabled = false;
+    document.getElementById('scannerStatus').textContent = 'Aktif';
+    document.getElementById('scannerStatus').className = 'scanner-status active';
+  }).catch(err => {
+    showNotif('Kamera tidak dapat diakses: ' + err, 'fail');
+  });
+}
+
+function stopScanner() {
+  if (scanner && isScanning) {
+    scanner.stop().then(() => {
+      isScanning = false;
+      document.getElementById('btnStart').disabled = false;
+      document.getElementById('btnStop').disabled = true;
+      document.getElementById('scannerStatus').textContent = 'Nonaktif';
+      document.getElementById('scannerStatus').className = 'scanner-status inactive';
+    });
+  }
+}
+
+// ── Scan handler ──────────────────────────────────────────────────────────
+function onScanSuccess(tutorId) {
+  const now = Date.now();
+  if (now - lastScanTime < COOLDOWN_MS) return;
+  lastScanTime = now;
+
+  const bac   = document.getElementById('bacSelect').value;
+  const nama  = TUTOR_MAP[tutorId] || tutorId;
+  const ts    = new Date();
+  const tsStr = ts.toLocaleTimeString('id-ID', { hour12: false });
+  const dateStr = ts.toLocaleDateString('id-ID');
+
+  let action, durationStr = '—';
+
+  if (!sessionLog[tutorId] || !sessionLog[tutorId].clockIn) {
+    // Clock In
+    if (!sessionLog[tutorId]) sessionLog[tutorId] = { name: nama, bac };
+    sessionLog[tutorId].clockIn = ts.toISOString();
+    action = 'in';
+  } else if (!sessionLog[tutorId].clockOut) {
+    // Clock Out
+    sessionLog[tutorId].clockOut = ts.toISOString();
+    const diffMs  = ts - new Date(sessionLog[tutorId].clockIn);
+    const diffMin = Math.floor(diffMs / 60000);
+    durationStr = `${Math.floor(diffMin / 60)}j ${diffMin % 60}m`;
+    sessionLog[tutorId].duration = durationStr;
+    action = 'out';
+  } else {
+    // Sudah complete, info saja
+    showNotif(`${nama} sudah clock in & clock out hari ini.`, 'sent');
+    return;
+  }
+
+  saveLog();
+  renderResult({ tutorId, nama, action, tsStr, dateStr, bac, durationStr });
+  renderLogList();
+  sendToSheets({ tutorId, nama, action, ts: ts.toISOString(), bac });
+}
+
+// ── Render result ─────────────────────────────────────────────────────────
+function renderResult({ tutorId, nama, action, tsStr, dateStr, bac, durationStr }) {
+  const panel = document.getElementById('resultPanel');
+  document.getElementById('idleState').style.display = 'none';
+  document.getElementById('resultContent').style.display = 'block';
+
+  const isIn = action === 'in';
+  panel.className = 'result-panel ' + (isIn ? 'success' : 'warning');
+
+  document.getElementById('resultIcon').textContent = isIn ? '✅' : '👋';
+  document.getElementById('resultStatus').textContent = isIn ? 'Clock In' : 'Clock Out';
+  document.getElementById('resultStatus').className = 'result-status ' + (isIn ? 'in' : 'out');
+  document.getElementById('resultName').textContent = nama;
+  document.getElementById('resultTime').textContent = tsStr;
+  document.getElementById('metaId').textContent = tutorId;
+  document.getElementById('metaBac').textContent = bac;
+  document.getElementById('metaDate').textContent = dateStr;
+  document.getElementById('metaDuration').textContent = isIn ? '(belum clock out)' : durationStr;
+}
+
+// ── Log list ──────────────────────────────────────────────────────────────
+function renderLogList() {
+  const list = document.getElementById('logList');
+  const entries = Object.entries(sessionLog);
+
+  document.getElementById('logCount').textContent = entries.length;
+
+  if (entries.length === 0) {
+    list.innerHTML = '<div class="log-empty">Belum ada scan hari ini.</div>';
+    return;
+  }
+
+  list.innerHTML = entries.reverse().map(([id, d]) => {
+    const cin  = d.clockIn  ? new Date(d.clockIn).toLocaleTimeString('id-ID', { hour12: false }) : '—';
+    const cout = d.clockOut ? new Date(d.clockOut).toLocaleTimeString('id-ID', { hour12: false }) : '—';
+    const badge = d.clockOut
+      ? `<span class="log-badge badge-out">Selesai · ${d.duration || ''}</span>`
+      : `<span class="log-badge badge-in">Hadir</span>`;
+    return `
+      <div class="log-item">
+        <div>
+          <div class="log-item-name">${d.name}</div>
+          <div class="log-item-sub">${id} · in ${cin} / out ${cout}</div>
+        </div>
+        ${badge}
+      </div>`;
+  }).join('');
+}
+
+// ── Persistence ───────────────────────────────────────────────────────────
+function saveLog() {
+  localStorage.setItem('waa_absen_log', JSON.stringify(sessionLog));
+}
+
+// Reset log harian (panggil otomatis bila beda hari)
+function checkDailyReset() {
+  const savedDate = localStorage.getItem('waa_absen_date');
+  const today = new Date().toLocaleDateString('id-ID');
+  if (savedDate !== today) {
+    sessionLog = {};
+    localStorage.setItem('waa_absen_log', '{}');
+    localStorage.setItem('waa_absen_date', today);
+  }
+}
+checkDailyReset();
+
+// ── Kirim ke Google Sheets (Apps Script webhook) ──────────────────────────
+async function sendToSheets({ tutorId, nama, action, ts, bac }) {
+  if (!SHEETS_WEBHOOK_URL || SHEETS_WEBHOOK_URL === 'https://script.google.com/macros/s/AKfycbxii-MIoNGBDsaf1UzEdiuk_um76Ew8m1qsXPswDp20dmcbFrMOulP2s5Deu94GkeSw2Q/exec') {
+    showNotif('Webhook belum dikonfigurasi — data tersimpan lokal.', 'fail');
+    return;
+  }
+  try {
+    const params = new URLSearchParams({ tutorId, nama, action, ts, bac });
+    await fetch(`${SHEETS_WEBHOOK_URL}?${params}`);
+    showNotif('Tercatat di Sheets ✓', 'sent');
+  } catch (e) {
+    showNotif('Gagal kirim ke Sheets — cek koneksi.', 'fail');
+  }
+}
+
+// ── Export CSV ────────────────────────────────────────────────────────────
+function exportCSV() {
+  const bac = document.getElementById('bacSelect').value || 'unknown';
+  const today = new Date().toLocaleDateString('id-ID').replace(/\//g, '-');
+  const rows = [['tutor_id', 'nama', 'bac', 'tanggal', 'clock_in', 'clock_out', 'durasi']];
+
+  Object.entries(sessionLog).forEach(([id, d]) => {
+    const cin  = d.clockIn  ? new Date(d.clockIn).toLocaleTimeString('id-ID', { hour12: false })  : '';
+    const cout = d.clockOut ? new Date(d.clockOut).toLocaleTimeString('id-ID', { hour12: false }) : '';
+    rows.push([id, d.name, d.bac || bac, today, cin, cout, d.duration || '']);
+  });
+
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `absen_${bac}_${today}.csv`;
+  a.click();
+  showNotif('CSV berhasil diunduh.', 'sent');
+}
+
+// ── Manual send all to Sheets ─────────────────────────────────────────────
+async function exportToSheets() {
+  const entries = Object.entries(sessionLog);
+  if (entries.length === 0) { showNotif('Tidak ada data untuk dikirim.', 'fail'); return; }
+  showNotif(`Mengirim ${entries.length} record ke Sheets...`, 'sent');
+
+  for (const [id, d] of entries) {
+    const bac = document.getElementById('bacSelect').value;
+    if (d.clockIn) {
+      await sendToSheets({ tutorId: id, nama: d.name, action: 'in',  ts: d.clockIn,  bac });
+    }
+    if (d.clockOut) {
+      await sendToSheets({ tutorId: id, nama: d.name, action: 'out', ts: d.clockOut, bac });
+    }
+  }
+}
+
+// ── Notif toast ───────────────────────────────────────────────────────────
+let notifTimer;
+function showNotif(msg, type) {
+  const el = document.getElementById('notif');
+  document.getElementById('notifMsg').textContent = msg;
+  el.className = `notif ${type} show`;
+  clearTimeout(notifTimer);
+  notifTimer = setTimeout(() => { el.className = `notif ${type}`; }, 3000);
+}
+
+// ── BAC list ─────────────────────────────────────────────────────────────
+async function loadBacList() {
+  try {
+    const res  = await fetch(TUTOR_MAP_URL + '?action=baclist');
+    const data = await res.json();
+    const sel  = document.getElementById('bacSelect');
+    if (Array.isArray(data) && data.length > 0) {
+      sel.innerHTML = '<option value="">— Pilih BAC —</option>'
+        + data.map(b => `<option>${b}</option>`).join('');
+      // restore pilihan terakhir
+      const last = localStorage.getItem('waa_last_bac');
+      if (last) sel.value = last;
+    }
+  } catch (e) {
+    document.getElementById('bacSelect').innerHTML = '<option value="">— Pilih BAC —</option>';
+  }
+}
+
+// Simpan pilihan BAC ke localStorage
+document.getElementById('bacSelect').addEventListener('change', function() {
+  localStorage.setItem('waa_last_bac', this.value);
+});
+
+// ── Buka Sheets ───────────────────────────────────────────────────────────
+function openSheets() {
+  window.open('https://docs.google.com/spreadsheets/d/1QP8WSBVkq1oEFakYSyZH5E-1KWXr5fX0b3CxdnMhZ-4/edit', '_blank');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+renderLogList();
+loadTutorMap();
+loadBacList();
+</script>
+</body>
+</html>
