@@ -60,7 +60,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .chart-card{background:var(--surface);border:0.5px solid var(--border-md);border-radius:12px;padding:14px;}
 .chart-title{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;}
 .bar-row{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
-.bar-lbl{font-size:10px;color:var(--text2);width:80px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-lbl{font-size:10px;color:var(--text2);width:130px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .bar-bg{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;}
 .bar-fill{height:100%;border-radius:3px;transition:width .5s;}
 .bar-val{font-size:10px;font-family:'DM Mono',monospace;color:var(--text2);min-width:28px;text-align:right;}
@@ -368,7 +368,6 @@ function applySearchableFilter(fkey,field,value){
 function renderRegional(){
   const f=filters.regional;
   const data=DATA.regional.filter(r=>{
-    if(!isValidProgram(r.program)) return false; // safety net: exclude post-program
     if(f.search&&!(r.regional||'').toLowerCase().includes(f.search.toLowerCase())) return false;
     if(f.program&&!matchFilter(r.program,f.program)) return false;
     if(f.regional&&!matchFilter(r.regional,f.regional)) return false;
@@ -424,7 +423,6 @@ function renderRegional(){
 function renderBatch(){
   const f=filters.batch;
   const data=DATA.batch.filter(r=>{
-    if(!isDuringProgramBatch(r.batch)&&!isValidProgram(r.program)) return false; // safety net: exclude post-program
     if(f.search&&!(r.batch||'').toLowerCase().includes(f.search.toLowerCase())) return false;
     if(f.program&&!matchFilter(r.program,f.program)) return false;
     if(f.regional&&!matchFilter(r.regional,f.regional)) return false;
@@ -460,9 +458,11 @@ function renderBatch(){
     </div></div>
   </div>`;
 
+  const chartData=data.filter(r=>isDuringProgramBatch(r.batch)); // sembunyikan post-program dari chart/tabel visual
+
   const charts=`<div class="charts-row">
-    <div class="chart-card"><div class="chart-title">Top 5 Batch (Student)</div>${barChart([...data].sort((a,b)=>n(b.total_student)-n(a.total_student)).slice(0,5).map(r=>({l:(r.batch||'').substring(0,22),v:n(r.total_student)})))}</div>
-    <div class="chart-card"><div class="chart-title">Avg Kehadiran (Top 6)</div>${barChart([...data].sort((a,b)=>n(b.avg_kehadiran)-n(a.avg_kehadiran)).slice(0,6).map(r=>({l:(r.batch||'').substring(0,22),v:n(r.avg_kehadiran)})),'var(--teal)')}</div>
+    <div class="chart-card"><div class="chart-title">Top 5 Batch (Student)</div>${barChart([...chartData].sort((a,b)=>n(b.total_student)-n(a.total_student)).slice(0,5).map(r=>({l:(r.batch||''),v:n(r.total_student)})))}</div>
+    <div class="chart-card"><div class="chart-title">Avg Kehadiran (Top 6)</div>${barChart([...chartData].sort((a,b)=>n(b.avg_kehadiran)-n(a.avg_kehadiran)).slice(0,6).map(r=>({l:(r.batch||''),v:n(r.avg_kehadiran)})),'var(--teal)')}</div>
     <div class="chart-card"><div class="chart-title">Distribusi Tier</div>${barChart([
       {l:'Excellent',v:data.reduce((s,r)=>s+n(r.tier_1_excellent),0)},
       {l:'Good',v:data.reduce((s,r)=>s+n(r.tier_2_good),0)},
@@ -526,7 +526,6 @@ function openBatchDetail(i){
 function renderStudent(){
   const f=filters.student;
   const data=DATA.student.filter(r=>{
-    if(!isDuringProgramBatch(r.batch)&&!isValidProgram(r.program)) return false; // safety net: exclude post-program
     if(f.search&&!(displayName(r)).toLowerCase().includes(f.search.toLowerCase())) return false;
     if(f.program&&!matchFilter(r.program,f.program)) return false;
     if(f.batch&&!matchFilter(r.batch,f.batch)) return false;
@@ -573,9 +572,11 @@ function renderStudent(){
     </div></div>
   </div>`;
 
+  const chartDataS=data.filter(r=>isDuringProgramBatch(r.batch)); // sembunyikan post-program dari chart visual
+
   const charts=`<div class="charts-row">
     <div class="chart-card"><div class="chart-title">Distribusi Tier</div>${barChart(['1 - Excellent','2 - Good','3 - Need Improvement','4 - At-Risk','5 - Critical'].map(t=>({l:t.replace(/^\d - /,''),v:data.filter(r=>r.tier===t).length})),'var(--blue)')}</div>
-    <div class="chart-card"><div class="chart-title">Top 5 Batch (Student)</div>${barChart(Object.entries(data.reduce((acc,r)=>{acc[r.batch||'?']=(acc[r.batch||'?']||0)+1;return acc},{})).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([l,v])=>({l:l.substring(0,20),v})))}</div>
+    <div class="chart-card"><div class="chart-title">Top 5 Batch (Student)</div>${barChart(Object.entries(chartDataS.reduce((acc,r)=>{acc[r.batch||'?']=(acc[r.batch||'?']||0)+1;return acc},{})).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([l,v])=>({l:l,v})))}</div>
     <div class="chart-card"><div class="chart-title">NPS Terakhir <span style="color:var(--text3);font-weight:400">(dari yang sudah isi)</span></div>${barChart([
       {l:'Promoter',v:data.filter(r=>r.nps_status_terakhir==='Promoter').length},
       {l:'Passive',v:data.filter(r=>r.nps_status_terakhir==='Passive').length},
@@ -650,6 +651,7 @@ function openStudentDetail(i){
       </div>
       <div class="fb-content" style="display:none;padding-left:4px">
         ${parseDetailList(r.detail_rating_rendah).length?parseDetailList(r.detail_rating_rendah).map(d=>`<div class="logbook-item" style="border-left:3px solid var(--amber)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">${d.date}</div>${d.content}</div>`).join(''):
+        n(r.jumlah_rating_rendah)>0?`<div style="font-size:11px;color:var(--text3);padding:6px">${n(r.jumlah_rating_rendah)} rating rendah tercatat, namun tidak ada catatan teks</div>`:
         '<div style="font-size:11px;color:var(--text3);padding:6px">Tidak ada rating rendah</div>'}
       </div>
 
@@ -659,6 +661,7 @@ function openStudentDetail(i){
       </div>
       <div class="fb-content" style="display:none;padding-left:4px">
         ${parseDetailList(r.detail_complaint).length?parseDetailList(r.detail_complaint).map(d=>`<div class="logbook-item" style="border-left:3px solid var(--red)"><div style="font-size:9px;color:var(--text3);margin-bottom:2px">${d.date}</div>${d.content}</div>`).join(''):
+        n(r.jumlah_complaint)>0?`<div style="font-size:11px;color:var(--text3);padding:6px">${n(r.jumlah_complaint)} complaint tercatat, namun tidak ada catatan teks (kualitatif_feedback kosong di source)</div>`:
         '<div style="font-size:11px;color:var(--text3);padding:6px">Tidak ada complaint</div>'}
       </div>
     </div>
